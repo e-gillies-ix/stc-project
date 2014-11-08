@@ -6,12 +6,17 @@
 #include <vector>
 #include <bitset>
 
+#include"Event.hpp"
+#include"Track.hpp"
+
 using namespace std;
 
 int main(){
 
     int nEvents, nTracks, nPoints;
-    short  event;
+    short int  eventRaw;
+    Track thisTrack;
+    std::vector<Event> track;
     std::vector<int> x,y,t;
     double sumX, sumY, sumT, sumX2, sumT2, sumXT, sumYT, sumXY;
     double meanX, meanY, meanT;
@@ -26,7 +31,7 @@ int main(){
 
     //Set up our input stream
     ifstream testBinary("onetrack.raw", ios::binary | ios::in | ios::ate);
-    nEvents = testBinary.tellg()/sizeof(event);
+    nEvents = testBinary.tellg()/sizeof(eventRaw);
     nTracks = nEvents/8;
     cout << nEvents << endl;
     cout << nTracks << endl;
@@ -34,17 +39,14 @@ int main(){
     //Look for correct event
     for (int n=0; n < nEvents; n++){
         testBinary.seekg(2*n,ios::beg);
-        testBinary.read((char*)&event,sizeof(event));
-        cout << "Event " << n << ": " << (bitset<16>)event << endl;
+        testBinary.read((char*)&eventRaw,sizeof(eventRaw));
 
         //Extract time and stuff
-        x.push_back(event & ~(~0 << (2-0+1)));
-        y.push_back((event >> 3) & ~(~0 << (5-3+1)));
-        t.push_back((event >> 6) & ~(~0 << (15-6+1)));
+        thisTrack.addEvent(eventRaw);
+        x.push_back(eventRaw & ~(~0 << (2-0+1)));
+        y.push_back((eventRaw >> 3) & ~(~0 << (5-3+1)));
+        t.push_back((eventRaw >> 6) & ~(~0 << (15-6+1)));
         //Read out our bits and values
-        cout << "x: " << x[n] << ", " << (bitset<16>)x[n] << endl;
-        cout << "y: " << y[n] << ", " << (bitset<16>)y[n] << endl;
-        cout << "t: " << t[n] << ", " << (bitset<16>)t[n] << endl;
         //Line of best fit
         sumY += y[n];
         sumT += t[n];
@@ -55,6 +57,8 @@ int main(){
         //sumX2 += x[n]*x[n];
         //sumX += x[n];
     }
+    cout << "Testing 1 2 3" << endl;
+    thisTrack.print();
     sumX = 28;
     meanX = 3.5;
     sumX2 = 140;
@@ -62,6 +66,8 @@ int main(){
     meanT = sumT/nPoints;
     slope1 = (sumXY - sumX*meanY) / (sumX2 - sumX*meanX);
     
+    interY2 = meanY;
+
     varyYT = sumYT - meanY*sumT;  
     varyXT = sumXT - meanX*sumT;  
     varyXX = sumX2 - meanX*sumX;  
@@ -69,20 +75,22 @@ int main(){
     varyTT = sumT2 - meanT*sumT;  
 
     velocity = ( varyYT + varyXY*varyXT/varyXX ) / (varyTT + varyXT*varyXT/varyXX); 
+    interY2 -= meanT*velocity;
     
     for ( int n = 0; n < nEvents; n++){
         sumYminusT += y[n] - velocity*t[n];
         sumXYminusT += x[n]*(y[n] - velocity*t[n]);
     }
 
-    slope2 = (sumXYminusT - meanX*sumYminusT) / varyXX;
+    slope2 = (sumXYminusT - meanX*sumYminusT) / varySRCXX;
 
     velocity = velocity * sqrt(1 + slope2*slope2 )  / ( 1 - slope2*slope2);
 
 
     //Close the file
     testBinary.close();
-
+    
+    thisTrack.fitTrack();
 
     /*
     cout << "sum x : " << sumX << endl; 
@@ -91,32 +99,18 @@ int main(){
     */
 
     //Find line of best fit
-        
-
-    double den = 0;
-    double num = 0;
-
-    for (int m=0; m < nEvents; m++){
-    
-       num += (x[m] - meanX) * (y[m] - meanY); 
-       den += (x[m] - meanX) * (x[m] - meanX); 
-
-    }
-
-    slope3 = num/den;
-
     interY1 = meanY - slope1*meanX;
-    interY2 = meanY - slope2*meanX - velocity ;
+    interY2 -= slope2*meanX;
     interY3 = meanY - slope3*meanX;
 
     cout << "Line 1 is: " << interY1 << " + " << slope1 << "*x " << endl;
     cout << "Line 2 is: " << interY2 << " + " << slope2 << "*x " << endl;
-    cout << "Line 3 is: " << interY3 << " + " << slope3 << "*x " << endl;
+    cout << "Line 3 is: " << thisTrack.getIntercept() << " + " << thisTrack.getSlope() << "*x " << endl;
 
-    //Output testing
-    ofstream testOut;
-    testOut.open("testOutput.dat");
-    testOut << "hello world" << endl;
-    testOut.close();
 }
 //shift y
+//cout << "Event " << n << ": " << (bitset<16>)eventRaw << endl;
+        /*cout << "Event " << n << ": " << (bitset<16>)eventRaw << endl;
+        cout << "x: " << x[n] << ", " << (bitset<16>)x[n] << endl;
+        cout << "y: " << y[n] << ", " << (bitset<16>)y[n] << endl;
+        cout << "t: " << t[n] << ", " << (bitset<16>)t[n] << endl;*/
