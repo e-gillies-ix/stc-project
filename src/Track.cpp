@@ -52,6 +52,9 @@ void Track::fitTrack(){
     meanX = sumX / events.size();
     meanY = sumY / events.size();
     meanT = sumT / events.size();
+    std::cout << "MeanT : " << meanT << std::endl;
+    std::cout << "MeanY : " << meanY << std::endl;
+    std::cout << "MeanX : " << meanX << std::endl;
 
     intercept = meanY;
 
@@ -67,13 +70,17 @@ void Track::fitTrack(){
     std::cout << "VaryTT : " << varyTT << std::endl;
 
     velocity = ( varyYT + varyXY*varyXT/varyXX ) / (varyTT + varyXT*varyXT/varyXX); 
+    std::cout << "Velocity : " << velocity << std::endl;
     intercept -= meanT*velocity; 
 
     for (std::vector<Event>::iterator it = events.begin() ; it != events.end(); ++it) {
         sumYprime += it->getY() - velocity*it->getT();
-        sumYprime += it->getX()*it->getY() - velocity*it->getT();
+        sumXYprime += it->getX()*(it->getY() - velocity*it->getT());
     }
 
+    std::cout << "sumXYprime : " << sumXYprime << std::endl;
+    std::cout << "sumYprime : " << sumYprime << std::endl;
+    std::cout << "Velocity : " << velocity << std::endl;
     slope = (sumXYprime - meanX*sumYprime) / varyXX;
     velocity = velocity * sqrt(1 + slope*slope )  / ( 1 - slope*slope);
     intercept -= meanX*slope;
