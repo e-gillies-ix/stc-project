@@ -18,27 +18,33 @@ int main(){
     Track thisTrack;
     std::vector<Event> track;
 
-    nPoints = 8;
+    nEvents = 8;
 
     //Set up our input stream
-    ifstream testBinary("onetrack.raw", ios::binary | ios::in | ios::ate);
-    nEvents = testBinary.tellg()/sizeof(eventRaw);
-    nTracks = nEvents/8;
-    //Look for correct event
+    //Test for hits along bottom line, i.e. y=0, at 100 time unit delay
+    //to hit wires half a cell unit away on odd x.
+    short testFlat[]= {0,6401,2,6403,4,6405,6,6407};
     for (int n=0; n < nEvents; n++){
-        testBinary.seekg(2*n,ios::beg);
-        testBinary.read((char*)&eventRaw,sizeof(eventRaw));
         //Extract Events
-        thisTrack.addEvent(eventRaw);
+        thisTrack.addEvent(testFlat[n]);
     }
-    //Close the file
-    testBinary.close();
-    
     thisTrack.print();
     thisTrack.fitTrackBad();
     cout << "Line 3 is: " << thisTrack.getIntercept() << " + " << thisTrack.getSlope() << "*x " << endl;
     thisTrack.fitTrack();
     cout << "Line 3 is: " << thisTrack.getIntercept() << " + " << thisTrack.getSlope() << "*x " << endl;
+
+    short testSym[] = {0,1537,3082,4619,4636,3101,1574,39};
+    Track thatTrack;
+    for (int n=0; n < nEvents; n++){
+        //Extract Events
+        thatTrack.addEvent(testSym[n]);
+    }
+    thatTrack.print();
+    thisTrack.fitTrackBad();
+    cout << "Line 3 is: " << thatTrack.getIntercept() << " + " << thatTrack.getSlope() << "*x " << endl;
+    thatTrack.fitTrack();
+    cout << "Line 3 is: " << thatTrack.getIntercept() << " + " << thatTrack.getSlope() << "*x " << endl;
 
 }
 //shift y

@@ -30,6 +30,7 @@ class Track {
     void addEvent(Event);
     void addEvent(short int);
     void fitTrack();
+    void fitTrackBad();
 };
 #endif
 

@@ -25,6 +25,7 @@ Event::Event(short int raw){
     //Takes bits [n,m] via (raw >> n) & ~(~0 << (m-n+1))
     x = (double)(raw & ~(~0 << 3));
     y = (double)((raw >> 3) & ~(~0 << 3));
+    y += (int)x%2 == 0 ? 0 : 0.5;
     t = (double)((raw >> 6) & ~(~0 << 10));
 }
 
