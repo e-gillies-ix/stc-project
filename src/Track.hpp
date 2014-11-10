@@ -11,6 +11,8 @@ class Track {
     //Physical Properties
     double velocity,slope,intercept;
     std::vector<Event> events;
+    //Statistical Properties
+    double trackMeanX, trackMeanY, trackSumXY, trackSumYY, trackSumXX;
 
     public:
     //Constructors
@@ -28,9 +30,9 @@ class Track {
     int getNEvents() const;
     //Setters
     void addEvent(Event);
+    void addEvent(double,double,double);
     void addEvent(short int);
     void fitTrack();
-    void fitTrackBad();
 };
 #endif
 
