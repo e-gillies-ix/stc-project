@@ -29,9 +29,11 @@ int main(){
     inTrack.addEvent(6,5,19.);
     inTrack.addEvent(7,5.5,19.);
     inTrack.print();
+    inTrack.firstFit();
+    inTrack.fitTrack();
     inTrack.fitTrack();
     cout << "NEW LINE ------------------------------------" << endl;
-    /*Track perfTrack = Track();
+    Track perfTrack = Track();
     perfTrack.addEvent(0.,3.,57.46957711);
     perfTrack.addEvent(1.,3.5,19.1565257);
     perfTrack.addEvent(2.,4.,19.1565257);
@@ -41,8 +43,10 @@ int main(){
     perfTrack.addEvent(6.,5.,19.1565257);
     perfTrack.addEvent(7.,5.5,19.1565257);
     perfTrack.print();
+    perfTrack.firstFit();
     perfTrack.fitTrack();
-    */
+    perfTrack.fitTrack();
+    
 
 }
 //shift y

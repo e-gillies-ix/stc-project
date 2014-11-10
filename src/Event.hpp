@@ -20,7 +20,7 @@ class Event {
     //Member Fucntions
     void print();
     double getX() const, getY() const, getT() const;
-    double getX2() const, getT2() const;
+    double getXX() const, getTT() const;
     double getXY() const, getXT() const, getYT() const;
 };
 #endif

@@ -34,22 +34,21 @@ int Track::getNEvents() const {return events.size();};
 void Track::addEvent(double x, double y, double t) {events.push_back(Event(x,y,t));};
 void Track::addEvent(Event nextEvent) {events.push_back(nextEvent);};
 void Track::addEvent(short int raw) {events.push_back(Event(raw));};
-void Track::fitTrack(){
+void Track::firstFit(){
 
-    //First do rough fit on line to find where hits are relative to line
-    double sumX = 0, sumY = 0, sumX2 = 0, sumXY = 0, varyYX = 0, meanX = 0, meanY = 0;
-    double varyXX = 0, varyXY = 0;
-
+    sumX = 0, sumY = 0, sumXX = 0, sumXY = 0, varyXY = 0, meanX = 0, meanY = 0;
+    varyXX = 0, varyXY = 0, sumTT = 0;
     for (std::vector<Event>::iterator evt = events.begin() ; evt != events.end(); ++evt) {
         sumX+=evt->getX();
         sumY+=evt->getY();
-        sumX2+=evt->getX2();
+        sumXX+=evt->getXX();
         sumXY+=evt->getXY();
+        sumTT+=evt->getTT();
     }
 
     meanX = sumX / events.size();
     meanY = sumY / events.size();
-    varyXX = sumX2 - meanX*sumX;  
+    varyXX = sumXX - meanX*sumX;  
     varyXY = sumXY - meanX*sumY;  
 
     //First order slope
@@ -57,17 +56,18 @@ void Track::fitTrack(){
     intercept = meanY - slope*meanX;
     std::cout << "First Order Slope is: " << intercept << " + " << slope << "*x " << std::endl;
 
+}
+void Track::fitTrack(){
+
     //Package relative position of hit to line in time variable using rough
     //fit.  Use this information to do full time and position fit.
-    double sumT = 0, sumT2 = 0, sumXT = 0, sumYT = 0, meanT = 0;
-    double varyXT = 0, varyYT = 0, varyTT = 0, varyTX = 0;
+    sumT = 0, sumXT = 0, sumYT = 0, meanT = 0;
+    varyXT = 0, varyYT = 0, varyTT = 0;
 
     for (std::vector<Event>::iterator evt = events.begin() ; evt != events.end(); ++evt) {
         //Uneffected by relative position considerations
-        sumT2+=evt->getT2();
         //Flip the sign on time if hit is below track
         if (std::signbit(evt->getY() - slope*evt->getX() - intercept)){
-            std::cout << "Triggered on : " << evt->getX() << ", " << evt->getY() << ", " << evt->getT() << ") " << std::endl;  
             sumT-=evt->getT();
             sumXT-=evt->getXT();
             sumYT-=evt->getYT();
@@ -78,31 +78,17 @@ void Track::fitTrack(){
             sumXT+=evt->getXT();
             sumYT+=evt->getYT();
         }
-    }    
+    }   
 
     meanT = sumT / events.size();
     varyYT = sumYT - meanY*sumT;  
     varyXT = sumXT - meanX*sumT;  
-    varyTT = sumT2 - meanT*sumT;  
-    varyTX = sumXT - meanT*sumX;
+    varyTT = sumTT - meanT*sumT;  
 
-    velocity = ( varyXY*varyXT - varyYT*varyXX ) / (varyTX*varyTX - varyXX*varyTT); 
-    slope = (varyXY - velocity*varyTX)/varyXX;
+    velocity = ( varyXY*varyXT - varyYT*varyXX ) / (varyXT*varyXT - varyXX*varyTT); 
+    slope = (varyXY - velocity*varyXT)/varyXX;
     intercept = meanY - meanT*velocity- meanX*slope; 
-
-    std::cout << "Second Order Slope is: " << intercept << " + " << slope << "*x " << std::endl;
-    std::cout << "Velocity Prime: " << velocity << std::endl;
     velocity = velocity/sqrt(1 + slope*slope );
-    std::cout << "Velocity: " << velocity << std::endl;
-
-    std::cout << "MeanT : " << meanT << std::endl;
-    std::cout << "MeanY : " << meanY << std::endl;
-    std::cout << "MeanX : " << meanX << std::endl;
-    std::cout << "VaryYT : " << varyYT << std::endl;
-    std::cout << "VaryXT : " << varyXT << std::endl;
-    std::cout << "VaryXX : " << varyXX << std::endl;
-    std::cout << "VaryTT : " << varyTT << std::endl;
-    std::cout << "VaryXY : " << varyXY << std::endl;
 
 }
 /*
@@ -124,5 +110,21 @@ void Track::fitTrack(){
   std::cout << "VaryXX : " << varyXX << std::endl;
   std::cout << "VaryTT : " << varyTT << std::endl;
   std::cout << "VaryXY : " << varyXY << std::endl;
+  
+  
+    std::cout << "MeanT : " << meanT << std::endl;
+    std::cout << "MeanY : " << meanY << std::endl;
+    std::cout << "MeanX : " << meanX << std::endl;
+    std::cout << "VaryYT : " << varyYT << std::endl;
+    std::cout << "VaryXT : " << varyXT << std::endl;
+    std::cout << "VaryXX : " << varyXX << std::endl;
+    std::cout << "VaryTT : " << varyTT << std::endl;
+    std::cout << "VaryXY : " << varyXY << std::endl;
+
+    std::cout << "Second Order Slope is: " << intercept << " + " << slope << "*x " << std::endl;
+    std::cout << "Velocity Prime: " << velocity << std::endl;
+    std::cout << "Velocity: " << velocity << std::endl;
+
+            std::cout << "Triggered on : " << evt->getX() << ", " << evt->getY() << ", " << evt->getT() << ") " << std::endl;  
   */
 

@@ -41,8 +41,8 @@ void Event::print() {
 double Event::getX() const {return x;};
 double Event::getY() const {return y;};
 double Event::getT() const {return t;};
-double Event::getX2() const {return x*x;};
-double Event::getT2() const {return t*t;};
+double Event::getXX() const {return x*x;};
+double Event::getTT() const {return t*t;};
 double Event::getXY() const {return x*y;};
 double Event::getXT() const {return x*t;};
 double Event::getYT() const {return y*t;};
