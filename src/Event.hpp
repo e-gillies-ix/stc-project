@@ -19,9 +19,12 @@ class Event {
     
     //Member Fucntions
     void print();
+    //Accessors
     double getX() const, getY() const, getT() const;
     double getXX() const, getTT() const;
     double getXY() const, getXT() const, getYT() const;
+    //Setters
+    void setX(double), setY(double), setT(double), setEvent(short);
 };
 #endif
 //maybe store raw data input?

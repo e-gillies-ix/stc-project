@@ -9,7 +9,7 @@
 
 //Constructors
     Track::Track()
-: velocity(0.),slope(0.),intercept(0.),events()
+: velocity(0.),slope(0.),intercept(0.),errVelocity(0.),errSlope(0.),errIntercept(0.),events()
 {}
 
 //From event vector
@@ -20,9 +20,19 @@
 //Destructor
 Track::~Track() {} 
 
-//Printer
-void Track::print() {
+//Printers
+void Track::printEvents() {
     for (std::vector<Event>::iterator evt = events.begin() ; evt != events.end(); ++evt) evt->print();
+}
+void Track::printTrack(){
+    std::cout << "Fit values are: velocity=" << velocity << ", line= " << slope << "*x + " << intercept << std::endl; 
+}
+
+//Reset button
+void Track::reset(){
+   velocity = 0;
+   slope = 0;
+   intercept = 0;
 }
 
 //Getters
@@ -34,31 +44,36 @@ int Track::getNEvents() const {return events.size();};
 void Track::addEvent(double x, double y, double t) {events.push_back(Event(x,y,t));};
 void Track::addEvent(Event nextEvent) {events.push_back(nextEvent);};
 void Track::addEvent(short int raw) {events.push_back(Event(raw));};
+void Track::setEvent(short int raw, int evt) {events[evt].setEvent(raw);};
+//Fitters
 void Track::firstFit(){
 
-    sumX = 0, sumY = 0, sumXX = 0, sumXY = 0, varyXY = 0, meanX = 0, meanY = 0;
-    varyXX = 0, varyXY = 0, sumTT = 0;
+    //Add in trigger requirements that all x layers are hit
+    sumX = 28; 
+    sumXX = 140;
+    varyXX = 42;
+    meanX = 3.5;
+    sumY = 0, sumXY = 0, varyXY = 0, meanY = 0, varyXY = 0, sumTT = 0;
     for (std::vector<Event>::iterator evt = events.begin() ; evt != events.end(); ++evt) {
-        sumX+=evt->getX();
         sumY+=evt->getY();
-        sumXX+=evt->getXX();
         sumXY+=evt->getXY();
         sumTT+=evt->getTT();
+        //sumXX+=evt->getXX();
+        //sumX+=evt->getX();
     }
 
-    meanX = sumX / events.size();
     meanY = sumY / events.size();
-    varyXX = sumXX - meanX*sumX;  
     varyXY = sumXY - meanX*sumY;  
-
+    //varyXX = sumXX - meanX*sumX;  
+    //meanX = sumX / events.size();
+    
     //First order slope
     slope = varyXY/varyXX; 
     intercept = meanY - slope*meanX;
-    std::cout << "First Order Slope is: " << intercept << " + " << slope << "*x " << std::endl;
 
 }
-void Track::fitTrack(){
-
+bool Track::fitTrack(){
+    double velocityNow = velocity;
     //Package relative position of hit to line in time variable using rough
     //fit.  Use this information to do full time and position fit.
     sumT = 0, sumXT = 0, sumYT = 0, meanT = 0;
@@ -68,6 +83,7 @@ void Track::fitTrack(){
         //Uneffected by relative position considerations
         //Flip the sign on time if hit is below track
         if (std::signbit(evt->getY() - slope*evt->getX() - intercept)){
+            //std::cout << "Triggered on : " << evt->getX() << ", " << evt->getY() << ", " << evt->getT() << ") " << std::endl;  
             sumT-=evt->getT();
             sumXT-=evt->getXT();
             sumYT-=evt->getYT();
@@ -85,46 +101,26 @@ void Track::fitTrack(){
     varyXT = sumXT - meanX*sumT;  
     varyTT = sumTT - meanT*sumT;  
 
-    velocity = ( varyXY*varyXT - varyYT*varyXX ) / (varyXT*varyXT - varyXX*varyTT); 
-    slope = (varyXY - velocity*varyXT)/varyXX;
-    intercept = meanY - meanT*velocity- meanX*slope; 
-    velocity = velocity/sqrt(1 + slope*slope );
-
+    vPrime = ( varyXY*varyXT - varyYT*varyXX ) / (varyXT*varyXT - varyXX*varyTT); 
+    slope = (varyXY - vPrime*varyXT)/varyXX;
+    intercept = meanY - meanT*vPrime- meanX*slope; 
+    velocity = vPrime/sqrt(1 + slope*slope );
+    return velocityNow == velocity;
 }
-/*
-   double sumYprime, sumXYprime;
-   for (std::vector<Event>::iterator evt = events.begin() ; evt != events.end(); ++evt) {
-   sumYprime += evt->getY() - velocity*evt->getT();
-   sumXYprime += evt->getX()*(evt->getY() - velocity*evt->getT());
-   }
 
-   std::cout << "sumXYprime : " << sumXYprime << std::endl;
-   std::cout << "sumYprime : " << sumYprime << std::endl;
-   slope = (sumXYprime - meanX*sumYprime) / varyXX;
-   */ 
-/*std::cout << "MeanT : " << meanT << std::endl;
-  std::cout << "MeanY : " << meanY << std::endl;
-  std::cout << "MeanX : " << meanX << std::endl;
-  std::cout << "VaryYT : " << varyYT << std::endl;
-  std::cout << "VaryXT : " << varyXT << std::endl;
-  std::cout << "VaryXX : " << varyXX << std::endl;
-  std::cout << "VaryTT : " << varyTT << std::endl;
-  std::cout << "VaryXY : " << varyXY << std::endl;
-  
-  
-    std::cout << "MeanT : " << meanT << std::endl;
-    std::cout << "MeanY : " << meanY << std::endl;
-    std::cout << "MeanX : " << meanX << std::endl;
-    std::cout << "VaryYT : " << varyYT << std::endl;
-    std::cout << "VaryXT : " << varyXT << std::endl;
-    std::cout << "VaryXX : " << varyXX << std::endl;
-    std::cout << "VaryTT : " << varyTT << std::endl;
-    std::cout << "VaryXY : " << varyXY << std::endl;
+void Track::setError(){
+    double errNum = (1 - 1/events.size()) * (sumX*sumXY - sumXX*sumY);
+    double errDen = 2*(1 - 1/events.size()) * (sumX*sumXT - sumXX*sumT);
+}
 
-    std::cout << "Second Order Slope is: " << intercept << " + " << slope << "*x " << std::endl;
-    std::cout << "Velocity Prime: " << velocity << std::endl;
-    std::cout << "Velocity: " << velocity << std::endl;
 
-            std::cout << "Triggered on : " << evt->getX() << ", " << evt->getY() << ", " << evt->getT() << ") " << std::endl;  
-  */
-
+bool Track::checkTrack(){
+    //Check for geometric ambiguities
+    bool allNeg = true, allPos = true;
+    for (std::vector<Event>::iterator evt = events.begin() ; evt != events.end(); ++evt) {
+        if (std::signbit(evt->getY() - slope*evt->getX() - intercept)) allPos = false; 
+        else allNeg = false;
+    }
+    if(allNeg || allPos) return false;
+    else return true;
+}

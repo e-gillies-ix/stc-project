@@ -37,6 +37,17 @@ void Event::print() {
     std::cout << "Event : (" << x <<", " << y <<", " << t <<")" << std::endl;
 }
 
+//Setters
+void Event::setX(double xNew) {x = xNew;};
+void Event::setY(double yNew) {y = yNew;};
+void Event::setT(double tNew) {t = tNew;};
+void Event::setEvent(short raw) {
+    x = (double)(raw & ~(~0 << 3));
+    y = (double)((raw >> 3) & ~(~0 << 3));
+    y += (int)x%2 == 0 ? 0 : 0.5;
+    t = (double)((raw >> 6) & ~(~0 << 10));
+}
+
 //Accessors
 double Event::getX() const {return x;};
 double Event::getY() const {return y;};
